@@ -23,7 +23,7 @@ import org.jsoup.select.Elements;
 
 public class MainClass {
 	// private static Hashtable alllinks = new Hashtable<String, String>();
-	private static File file = new File("urls");
+	// private static File file = new File("urls");
 	private static File datafile = new File("data");
 	// private static Set fetchset = new LinkedHashSet<String>();
 	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -38,6 +38,7 @@ public class MainClass {
 			stmt.execute("drop table article if exists");
 			stmt.execute("CREATE TABLE urls(ID INT IDENTITY  PRIMARY KEY, url VARCHAR(255) unique,stat int not null)");
 			stmt.execute("CREATE TABLE article(ID INT IDENTITY  PRIMARY KEY, url VARCHAR(255) unique,stat int not null)");
+			stmt.execute("INSERT INTO  urls( url,stat) VALUES('http://www.36kr.com/',0)");
 			stmt.execute("commit");
 			ConnectionFactory.close(stmt);
 			ConnectionFactory.close(conn);
@@ -46,114 +47,95 @@ public class MainClass {
 			System.err.println(e.getMessage());
 		}
 
+		UrlCrawler ucrawler = new UrlCrawler();
+		ucrawler.start();
+
 		Crawler crawler = new Crawler();
 		crawler.start();
-		fetchUrls("http://www.36kr.com/");
-		// UrlCrawler ucrawler= new UrlCrawler();
-		// ucrawler.run();
+		Crawler crawler2 = new Crawler();
+		crawler2.start();
+		Crawler crawler3 = new Crawler();
+		crawler3.start();
+		// fetchUrls("http://www.36kr.com/");
+
 		// fetchData("http://www.36kr.com/p/207831.html");//test........
 	}
 
-	private static void fetchUrls(String url) {
-		// System.out.println(fetchset.size());
-		// System.out.println(alllinks.size());
-		Document doc = null;
-		try {
-			doc = Jsoup.connect(url).get();
-		} catch (IOException e) {
-			System.err.println(e.getMessage());
-			// fetchUrls((String) fetchset.iterator().next());
-			try {
-				Connection conn = ConnectionFactory.getConnection();
-				Statement stmt = conn.createStatement();
-				ResultSet res = stmt
-						.executeQuery("select url from urls where stat=0 limit 1");
-				res.next();
-				String newurl = res.getString(1);
-				stmt.execute("update urls set stat=1 where url='" + newurl
-						+ "'");
-				ConnectionFactory.close(stmt);
-				ConnectionFactory.close(conn);
-				fetchUrls(newurl);
+	static class UrlCrawler extends Thread {
 
-			} catch (SQLException e1) {
-				System.err.println(e1.getMessage());
+		@Override
+		public void run() {
+			while (true) {
+				fetchUrls();
+
 			}
+
 		}
+	}
 
-		Elements alist = doc.select("a");
-		for (Element element : alist) {
-			String href = element.absUrl("href");
-			String title = element.text();
-
-			String regEx = "http://www.36kr.com/p/\\d+\\.html";
-			Pattern p = Pattern.compile(regEx);
-			Matcher m = p.matcher(href);
-
-			String regEx2 = "http://www.36kr.com/.*";
-			Pattern p2 = Pattern.compile(regEx2);
-			Matcher m2 = p2.matcher(href);
-			if (m2.matches()) {
-				// fetchset.add(href);
-				try {
-					Connection conn = ConnectionFactory.getConnection();
-					Statement stmt = conn.createStatement();
-					stmt.execute("insert into urls(url,stat) values('" + href
-							+ "',0)");
-					ConnectionFactory.close(stmt);
-					ConnectionFactory.close(conn);
-
-				} catch (SQLException e) {
-					if (e.getErrorCode() != 23505) {
-						System.err.println(e.getMessage());
-					}
-
-				}
-
-			}
-			if (m.matches()) {
-				// if (!alllinks.containsKey(href)) {
-				// try {
-				// // FileUtils.writeStringToFile(file, href + "\t" + title
-				// // + "\n", true);
-				// fetchData(href);
-				// } catch (IOException e) {
-				// e.printStackTrace();
-				// }
-				// }
-				// alllinks.put(href, title);
-				try {
-					Connection conn = ConnectionFactory.getConnection();
-					Statement stmt = conn.createStatement();
-					stmt.execute("insert into article(url,stat) values('"
-							+ href + "',0)");
-					ConnectionFactory.close(stmt);
-					ConnectionFactory.close(conn);
-
-				} catch (SQLException e) {
-					if (e.getErrorCode() != 23505) {
-						System.err.println(e.getMessage());
-					}
-
-				}
-
-			}
-		}
-		// String newurl = (String) fetchset.iterator().next();
-		// fetchset.remove(newurl);
+	private static void fetchUrls() {
 		try {
 			Connection conn = ConnectionFactory.getConnection();
 			Statement stmt = conn.createStatement();
 			ResultSet res = stmt
 					.executeQuery("select url from urls where stat=0 limit 1");
 			res.next();
-			String newurl = res.getString(1);
-			stmt.execute("update urls set stat=1 where url='" + newurl + "'");
+			String url = res.getString(1);
+			stmt.execute("update urls set stat=1 where url='" + url + "'");
 			ConnectionFactory.close(stmt);
 			ConnectionFactory.close(conn);
-			fetchUrls(newurl);
+			Document doc = null;
 
-		} catch (SQLException e) {
+			doc = Jsoup.connect(url).get();
+			Elements alist = doc.select("a");
+			for (Element element : alist) {
+				String href = element.absUrl("href");
+				String title = element.text();
+
+				String regEx = "http://www.36kr.com/p/\\d+\\.html";
+				Pattern p = Pattern.compile(regEx);
+				Matcher m = p.matcher(href);
+
+				String regEx2 = "http://www.36kr.com/.*";
+				Pattern p2 = Pattern.compile(regEx2);
+				Matcher m2 = p2.matcher(href);
+				if (m2.matches()) {
+					// fetchset.add(href);
+					try {
+						Connection conn2 = ConnectionFactory.getConnection();
+						Statement stmt2 = conn2.createStatement();
+						stmt2.execute("insert into urls(url,stat) values('"
+								+ href + "',0)");
+						ConnectionFactory.close(stmt2);
+						ConnectionFactory.close(conn2);
+
+					} catch (SQLException e) {
+						if (e.getErrorCode() != 23505) {
+							System.err.println(e.getMessage());
+						}
+
+					}
+
+				}
+				if (m.matches()) {
+					try {
+						Connection conn3 = ConnectionFactory.getConnection();
+						Statement stmt3 = conn3.createStatement();
+						stmt3.execute("insert into article(url,stat) values('"
+								+ href + "',0)");
+						ConnectionFactory.close(stmt3);
+						ConnectionFactory.close(conn3);
+
+					} catch (SQLException e) {
+						if (e.getErrorCode() != 23505) {
+							System.err.println(e.getMessage());
+						}
+
+					}
+
+				}
+			}
+		} catch (Exception e) {
 			System.err.println(e.getMessage());
 		}
 
