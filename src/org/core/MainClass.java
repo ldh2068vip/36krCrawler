@@ -3,15 +3,12 @@ package org.core;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Hashtable;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,6 +18,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import sun.util.logging.resources.logging;
+
 public class MainClass {
 	// private static Hashtable alllinks = new Hashtable<String, String>();
 	// private static File file = new File("urls");
@@ -28,6 +27,7 @@ public class MainClass {
 	// private static Set fetchset = new LinkedHashSet<String>();
 	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 	private static String today = sdf.format(new Date());
+	private static Logger log = Logger.getLogger("36krCrwler");
 
 	public static void main(String[] args) {
 		// 建表
@@ -38,13 +38,11 @@ public class MainClass {
 			stmt.execute("drop table article if exists");
 			stmt.execute("CREATE TABLE urls(ID INT IDENTITY  PRIMARY KEY, url VARCHAR(255) unique,stat int not null)");
 			stmt.execute("CREATE TABLE article(ID INT IDENTITY  PRIMARY KEY, url VARCHAR(255) unique,stat int not null)");
-			stmt.execute("INSERT INTO  urls( url,stat) VALUES('http://www.36kr.com/',0)");
-			stmt.execute("commit");
 			ConnectionFactory.close(stmt);
 			ConnectionFactory.close(conn);
 
 		} catch (SQLException e) {
-			System.err.println(e.getMessage());
+			log.warning(e.getMessage());
 		}
 
 		UrlCrawler ucrawler = new UrlCrawler();
@@ -67,7 +65,11 @@ public class MainClass {
 		public void run() {
 			while (true) {
 				fetchUrls();
-
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					log.warning(e.getMessage());
+				}
 			}
 
 		}
@@ -79,8 +81,12 @@ public class MainClass {
 			Statement stmt = conn.createStatement();
 			ResultSet res = stmt
 					.executeQuery("select url from urls where stat=0 limit 1");
-			res.next();
-			String url = res.getString(1);
+
+			String url = "http://www.36kr.com/";
+			if (res.next()) {
+				url = res.getString(1);
+			}
+
 			stmt.execute("update urls set stat=1 where url='" + url + "'");
 			ConnectionFactory.close(stmt);
 			ConnectionFactory.close(conn);
@@ -111,7 +117,7 @@ public class MainClass {
 
 					} catch (SQLException e) {
 						if (e.getErrorCode() != 23505) {
-							System.err.println(e.getMessage());
+							log.warning(e.getMessage());
 						}
 
 					}
@@ -128,7 +134,7 @@ public class MainClass {
 
 					} catch (SQLException e) {
 						if (e.getErrorCode() != 23505) {
-							System.err.println(e.getMessage());
+							log.warning(e.getMessage());
 						}
 
 					}
@@ -136,7 +142,7 @@ public class MainClass {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
+			log.warning(e.getMessage());
 		}
 
 		// fetchUrls(newurl);
@@ -148,7 +154,11 @@ public class MainClass {
 		public void run() {
 			while (true) {
 				fetchData();
-
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					log.warning(e.getMessage());
+				}
 			}
 
 		}
@@ -188,22 +198,23 @@ public class MainClass {
 							+ "#" + article.replaceAll("\r|\n", "") + "\n",
 					true);
 		} catch (IOException e) {
-			System.err.println(e.getMessage());
+			log.warning(e.getMessage());
 		} catch (SQLException e) {
 			if (e.getErrorCode() != 23505) {
-				System.err.println(e.getMessage());
+				log.warning(e.getMessage());
 			}
 			if (e.getErrorCode() == 2000) {
 
 				try {
 					Thread.sleep(50000);
 				} catch (InterruptedException e1) {
-					System.err.println(e1.getMessage());
+					log.warning(e1.getMessage());
 				}
 			}
 
-		} catch (Exception e) {
-			System.err.println(e.getMessage());
+		} 
+		catch (Exception e) {
+			log.warning(e.getMessage());
 		}
 	}
 }
