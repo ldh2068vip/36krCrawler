@@ -36,7 +36,7 @@ public class MainClass {
 			Statement stmt = conn.createStatement();
 			stmt.execute("drop table urls if exists");
 			stmt.execute("drop table article if exists");
-			stmt.execute("CREATE TABLE urls(ID INT IDENTITY  PRIMARY KEY, url VARCHAR(255) unique,stat int not null)");
+			stmt.execute("CREATE TABLE urls(ID INT IDENTITY  PRIMARY KEY, url VARCHAR(400) unique,stat int not null)");
 			stmt.execute("CREATE TABLE article(ID INT IDENTITY  PRIMARY KEY, url VARCHAR(255) unique,stat int not null)");
 			ConnectionFactory.close(stmt);
 			ConnectionFactory.close(conn);
