@@ -18,8 +18,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import sun.util.logging.resources.logging;
-
 public class MainClass {
 	// private static Hashtable alllinks = new Hashtable<String, String>();
 	// private static File file = new File("urls");
@@ -172,7 +170,6 @@ public class MainClass {
 					.executeQuery("select url from article where stat=0 limit 1");
 			res.next();
 			String url = res.getString(1);
-			stmt.execute("update article set stat=1 where url='" + url + "'");
 			ConnectionFactory.close(stmt);
 			ConnectionFactory.close(conn);
 			Document doc = null;
@@ -197,6 +194,12 @@ public class MainClass {
 							+ author.replaceAll("#|\r|\n", "") + "#" + time
 							+ "#" + article.replaceAll("\r|\n", "") + "\n",
 					true);
+			
+			Connection conn2 = ConnectionFactory.getConnection();
+			Statement stmt2 = conn2.createStatement();
+			stmt.execute("update article set stat=1 where url='" + url + "'");
+			ConnectionFactory.close(stmt2);
+			ConnectionFactory.close(conn2);
 		} catch (IOException e) {
 			log.warning(e.getMessage());
 		} catch (SQLException e) {
